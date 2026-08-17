@@ -1,0 +1,54 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mcd
+  namespace: mcd
+  annotations:
+    # No rewrite: sub-apps own their ROOT_PATH and serve the full path themselves.
+    nginx.ingress.kubernetes.io/use-regex: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: mcd.devailab.work
+      http:
+        paths:
+          # --- Sub-app services (most specific first) ---
+          - path: /scanning
+            pathType: Prefix
+            backend:
+              service:
+                name: scanning
+                port:
+                  number: 80
+          - path: /troubleshoot
+            pathType: Prefix
+            backend:
+              service:
+                name: troubleshoot
+                port:
+                  number: 80
+          # --- Hub owns the PWA entry points explicitly ---
+          # /sw.js and /manifest.json MUST resolve to the hub so the single
+          # root-scoped service worker controls the whole origin.
+          - path: /sw.js
+            pathType: Exact
+            backend:
+              service:
+                name: hello
+                port:
+                  number: 80
+          - path: /manifest.json
+            pathType: Exact
+            backend:
+              service:
+                name: hello
+                port:
+                  number: 80
+          # --- Hub catch-all (LEAST specific, matched last) ---
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: hello
+                port:
+                  number: 80

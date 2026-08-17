@@ -1,0 +1,39 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: troubleshoot
+  namespace: mcd
+  labels:
+    app: troubleshoot
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: troubleshoot
+  template:
+    metadata:
+      labels:
+        app: troubleshoot
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: troubleshoot
+          image: ghcr.io/adriensieg/mcd-troubleshoot:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ROOT_PATH
+              value: "/troubleshoot"
+          readinessProbe:
+            httpGet: { path: /troubleshoot/health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /troubleshoot/health, port: 8000 }
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "300m", memory: "128Mi" }

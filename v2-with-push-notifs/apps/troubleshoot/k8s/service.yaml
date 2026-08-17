@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: troubleshoot
+  namespace: mcd
+  labels:
+    app: troubleshoot
+spec:
+  selector:
+    app: troubleshoot
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

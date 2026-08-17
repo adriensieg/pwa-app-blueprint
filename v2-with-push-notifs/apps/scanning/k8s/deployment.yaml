@@ -1,0 +1,47 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: scanning
+  namespace: mcd
+  labels:
+    app: scanning
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: scanning
+  template:
+    metadata:
+      labels:
+        app: scanning
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: scanning
+          image: ghcr.io/adriensieg/mcd-scanning:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ROOT_PATH
+              value: "/scanning"
+            - name: DATA_FILE
+              value: "/data/data.txt"
+          readinessProbe:
+            httpGet: { path: /scanning/health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /scanning/health, port: 8000 }
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "500m", memory: "256Mi" }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        - name: data
+          emptyDir: {}

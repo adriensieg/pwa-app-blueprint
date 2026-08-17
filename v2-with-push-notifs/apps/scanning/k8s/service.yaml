@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: scanning
+  namespace: mcd
+  labels:
+    app: scanning
+spec:
+  selector:
+    app: scanning
+  ports:
+    - name: http
+      port: 80
+      targetPort: 8000
+  type: ClusterIP

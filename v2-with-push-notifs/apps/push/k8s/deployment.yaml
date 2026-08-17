@@ -1,0 +1,62 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: push
+  namespace: mcd
+  labels:
+    app: push
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: push
+  template:
+    metadata:
+      labels:
+        app: push
+    spec:
+      imagePullSecrets:
+        - name: ghcr-secret
+      containers:
+        - name: push
+          image: ghcr.io/adriensieg/mcd-push:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 8000
+          env:
+            - name: ROOT_PATH
+              value: "/push"
+            - name: SUBS_FILE
+              value: "/data/subscriptions.txt"
+            - name: NOTIFY_INTERVAL_MIN
+              value: "5"
+            - name: VAPID_SUBJECT
+              value: "mailto:admin@devailab.work"
+            - name: VAPID_PUBLIC_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vapid-keys
+                  key: public
+            - name: VAPID_PRIVATE_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: vapid-keys
+                  key: private
+          readinessProbe:
+            httpGet: { path: /push/health, port: 8000 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /push/health, port: 8000 }
+            initialDelaySeconds: 15
+            periodSeconds: 30
+          resources:
+            requests: { cpu: "50m", memory: "64Mi" }
+            limits: { cpu: "300m", memory: "192Mi" }
+          volumeMounts:
+            - name: data
+              mountPath: /data
+      volumes:
+        # Subscriptions must survive restarts -> PVC in production. emptyDir for now.
+        - name: data
+          emptyDir: {}
